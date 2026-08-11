@@ -1,0 +1,102 @@
+{
+  "simulation": {
+    "enabled": false,
+    "spawn_interval_seconds": 4.0,
+    "decay_multiplier": 900.0,
+    "maximum_simulated_incidents": 18,
+    "road_selection_weights": {
+      "motorway": 5.0,
+      "motorway_link": 2.0,
+      "trunk": 3.5,
+      "trunk_link": 1.5,
+      "primary": 2.0,
+      "primary_link": 1.0,
+      "secondary": 0.7,
+      "secondary_link": 0.4,
+      "tertiary": 0.35,
+      "tertiary_link": 0.25,
+      "unclassified": 0.22,
+      "residential": 0.18,
+      "living_street": 0.14,
+      "service": 0.1
+    }
+  },
+  "rendering": {
+    "background": "#071923",
+    "island_fill": "#1b2025",
+    "island_outline": "#252c35",
+    "hierarchy_grays": {
+      "1": "#65727d",
+      "2": "#65727d",
+      "3": "#65727d",
+      "4": "#65727d",
+      "5": "#65727d",
+      "6": "#65727d",
+      "7": "#65727d"
+    },
+    "class_colours": {
+      "motorway": "#65727d",
+      "motorway_link": "#65727d",
+      "trunk": "#65727d",
+      "trunk_link": "#65727d",
+      "primary": "#65727d",
+      "primary_link": "#65727d",
+      "secondary": "#65727d",
+      "secondary_link": "#65727d"
+    },
+    "ping_colours": {
+      "new": "#D8FF5F",
+      "warm": "#ff8a3d",
+      "cool": "#f4d35e"
+    }
+  },
+  "animation": {
+    "maximum_intensity": 2.5,
+    "neighbour_propagation_strength": 0.28,
+    "neighbour_radius": 1,
+    "update_hz": 15
+  },
+  "camera": {
+    "default_zoom": 1.0,
+    "minimum_zoom": 0.35,
+    "maximum_zoom": 12.0
+  },
+  "city_data": {
+    "source_modes": {
+      "incidents": "live",
+      "buses": "live",
+      "rainfall": "live",
+      "lightning": "live",
+      "roadworks": "live",
+      "traffic_speed_bands": "live"
+    },
+    "bus_arrival_endpoint": "https://datamall2.mytransport.sg/ltaodataservice/v3/BusArrival",
+    "bus_routes_endpoint": "https://datamall2.mytransport.sg/ltaodataservice/BusRoutes",
+    "bus_services_endpoint": "https://datamall2.mytransport.sg/ltaodataservice/BusServices",
+    "bus_stops_endpoint": "https://datamall2.mytransport.sg/ltaodataservice/BusStops",
+    "roadworks_endpoint": "https://datamall2.mytransport.sg/ltaodataservice/RoadWorks",
+    "traffic_speed_bands_endpoint": "https://datamall2.mytransport.sg/ltaodataservice/v4/TrafficSpeedBands",
+    "rainfall_endpoint": "https://api-open.data.gov.sg/v2/real-time/api/rainfall",
+    "lightning_endpoint": "https://api-open.data.gov.sg/v2/real-time/api/weather?api=lightning",
+    "wind_direction_endpoint": "https://api-open.data.gov.sg/v2/real-time/api/wind-direction",
+    "wind_speed_endpoint": "https://api-open.data.gov.sg/v2/real-time/api/wind-speed",
+    "bus_arrival_poll_seconds": 20,
+    "bus_static_refresh_seconds": 86400,
+    "bus_sample_stops": 72,
+    "bus_arrival_batch_size": 12,
+    "maximum_rendered_buses": 240,
+    "simulated_buses": 80,
+    "roadworks_poll_seconds": 86400,
+    "traffic_speed_bands_poll_seconds": 300,
+    "traffic_speed_bands_sample_pages": 24,
+    "traffic_speed_bands_sample_stride": 5000,
+    "traffic_speed_bands_parallel_requests": 6,
+    "wind_poll_seconds": 300,
+    "simulated_roadworks": 6,
+    "rainfall_poll_seconds": 60,
+    "lightning_poll_seconds": 180,
+    "simulated_rain_clouds": 7,
+    "simulated_lightning_min_seconds": 9,
+    "simulated_lightning_max_seconds": 22
+  }
+}

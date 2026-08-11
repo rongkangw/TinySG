@@ -1,0 +1,15 @@
+.git
+.venv
+**/__pycache__
+*.py[cod]
+*.log
+.env
+.env.*
+frontend/node_modules
+frontend/dist
+frontend/*.tsbuildinfo
+data/*.geojson
+data/bus_network_cache.json
+output/*.png
+tests
+preprocess

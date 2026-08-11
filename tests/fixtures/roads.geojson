@@ -1,0 +1,11 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {"type":"Feature","properties":{"@id":"way/1","highway":"motorway","ref":"PIE"},"geometry":{"type":"LineString","coordinates":[[103.61,1.32],[103.82,1.34],[104.02,1.35]]}},
+    {"type":"Feature","properties":{"@id":"way/2","highway":"trunk","name":"Central Road"},"geometry":{"type":"LineString","coordinates":[[103.82,1.21],[103.82,1.34],[103.83,1.47]]}},
+    {"type":"Feature","properties":{"@id":"way/3","highway":"primary","name":"Diagonal Avenue"},"geometry":{"type":"LineString","coordinates":[[103.66,1.24],[103.82,1.34],[103.98,1.44]]}},
+    {"type":"Feature","properties":{"@id":"way/4","highway":"secondary","name":"South Street"},"geometry":{"type":"LineString","coordinates":[[103.70,1.27],[103.84,1.28],[103.96,1.27]]}},
+    {"type":"Feature","properties":{"@id":"way/5","highway":"residential","name":"Neighbourhood Lane"},"geometry":{"type":"LineString","coordinates":[[103.75,1.30],[103.80,1.30],[103.82,1.34]]}},
+    {"type":"Feature","properties":{"@id":"way/6","highway":"service","name":"Service Road"},"geometry":{"type":"LineString","coordinates":[[103.89,1.31],[103.93,1.32],[103.98,1.33]]}}
+  ]
+}
