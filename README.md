@@ -36,7 +36,7 @@ After cloning:
 ```powershell
 git lfs install
 git lfs pull
-Copy-Item .env.example .env
+# Create a root .env file if it does not exist; Compose reads it at runtime.
 docker compose up --build -d
 ```
 
@@ -75,7 +75,6 @@ npm.cmd ci
 npm.cmd run build
 Set-Location ..
 
-Copy-Item .env.example .env
 .\.venv\Scripts\python.exe run_web.py
 ```
 
@@ -115,7 +114,7 @@ DATA_GOV_SG_API_KEY=
 - `DATA_GOV_SG_API_KEY` raises data.gov.sg weather API rate limits.
 - Shell environment variables override `.env` values.
 - Restart the backend after changing credentials.
-- Never commit `.env`; only `.env.example` belongs in the repository.
+- Never commit `.env`; provide credentials through the environment or a local `.env`.
 
 ## Data Layers
 

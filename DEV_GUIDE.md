@@ -94,10 +94,11 @@ TrafficMap/
 │   ├── rasterize.py              Ordered road cells
 │   ├── rail.py                   Rail overlay
 │   ├── environmental.py          Static environment facade
-│   └── environment_layers/       Land use, greenery, and airports
+│   ├── preview.py                Dependency-free preview PNG encoder
+│   ├── projection.py             Shared geographic-to-world projection
+│   └── environment_layers/       Coastline, land use, greenery, and airports
 ├── tests/                        Python unit and integration checks
 ├── .gitattributes               Git LFS rules for large data artifacts
-├── .env.example                  Credential template
 ├── Dockerfile                    Multi-stage production image
 ├── compose.yaml                  Single-container local deployment
 ├── README.md                     User onboarding
@@ -135,9 +136,9 @@ Set-Location ..
 
 ### Configure optional live sources
 
-```powershell
-Copy-Item .env.example .env
-```
+The backend reads `KEY=VALUE` lines from the root `.env`, so create it when it
+does not exist and add any of the variables below. Existing shell variables
+take precedence.
 
 Supported server-side variables:
 
@@ -199,9 +200,10 @@ Set-Location ..
 ### Docker
 
 ```powershell
-Copy-Item .env.example .env
 docker compose up --build -d
 ```
+
+- Create a root `.env` before starting; Compose injects it at runtime.
 
 - The Node build stage produces `frontend/dist`.
 - The Python runtime image includes only backend code, configuration, the local
@@ -292,7 +294,7 @@ Use a separate output directory and lower resolution for experiments. The produc
   - service;
   - unclassified.
 - Ignores unsupported classes and `MultiLineString` road features.
-- Selects the road label from `ref`, then `name`, then the highway class.
+- Selects the road label from `ref`, then `name`, then the title-cased highway class (for example `Service` or `Motorway Link`).
 
 ### Stage 2: simplify geometry
 
@@ -349,7 +351,7 @@ Ordered pixels are required for:
 
 `preprocess/rail.py`:
 
-- Accepts rail `LineString` and `MultiLineString` features with a `ref`.
+- Accepts rail `LineString` and `MultiLineString` features with a `ref`; features without a `ref` are dropped.
 - Removes reciprocal duplicate route geometry.
 - Produces one-pixel MRT and LRT paths.
 - Associates station points with lines.
@@ -362,6 +364,9 @@ Ordered pixels are required for:
 
 - `common.py`
   - Shared polygon fill, boundary, line, and scanline helpers.
+
+- `coastline.py`
+  - Builds the island land mask from `natural=coastline`, stitching open chains and closing small gaps, and produces the `land_spans` and `coastline_pixels`.
 
 - `land_use.py`
   - Normalizes source properties into residential, commercial, industrial, civic, recreation, development, agriculture, military, water, and transport sectors.
@@ -420,7 +425,7 @@ Coordinate producer, backend, frontend, and test changes explicitly.
 - Scanline span: `[y, inclusive_start_x, inclusive_end_x]`
 - Canvas rendering: normalized world coordinates after the camera transform
 
-The frontend `Point` type is intentionally broad and is used for both normalized points and integer raster cells. Treat the owning field, not the TypeScript alias, as the source of truth.
+The frontend `Point` type is a bare `[number, number]` tuple used for both normalized points and integer raster cells; it carries no coordinate-space tag. Treat the owning field, not the TypeScript alias, as the source of truth.
 
 ### `road_graph.json`
 
@@ -489,6 +494,8 @@ Edge IDs must continue to match `road_graph.json` and `map_layout.json`.
 ### `environment_pixels.json`
 
 - `resolution`
+- `land_spans`
+- `coastline_pixels`
 - `land_use.sectors`
   - `category`
   - `spans`
@@ -579,7 +586,7 @@ The local incident file is expected to be an object with a `value` array:
 }
 ```
 
-A top-level array is not accepted by the current loader. Missing files are treated as no live incidents; malformed data can abort startup.
+Both a top-level array and an object with a `value` array are accepted by the current loader. Missing files are treated as no live incidents; malformed data can abort startup.
 
 Default real-time lifetime profiles:
 
@@ -954,7 +961,7 @@ Unknown generic commands are currently ignored by `RoadStateEngine` but still ca
 - `frontend/src/App.tsx`
   - Owns UI-only state.
   - Calls `useRealtimeState()` for backend state.
-  - Composes the canvas, controls, legend, event monitor, and statistics.
+  - Composes the canvas, controls, legend, CityStatus panel, and statistics.
   - Creates camera focus targets from selected story moments.
 
 Development `StrictMode` may execute effects and expensive memo initializers twice. Production does not.
@@ -1060,6 +1067,7 @@ Canonical order in `frontend/src/map/layers/order.ts`:
 | 60 | `aircraft` | Simulated airport journeys |
 | 70 | `lightning` | Short-lived strikes |
 | 80 | `clouds` | Rainfall-driven or simulated cloud cover |
+| 90 | `hoverHighlight` | Hover glow for roads, rail, airports, and land use |
 
 The compositor applies this order regardless of insertion order in `RoadCanvas`.
 
@@ -1104,6 +1112,9 @@ The compositor applies this order regardless of insertion order in `RoadCanvas`.
 - `dynamic/LightningLayer.ts`
   - Draws a short purple expanding pixel burst.
   - Uses the client receipt clock for animation.
+
+- `dynamic/HoverHighlightLayer.ts`
+  - Draws a hover glow for roads, rail, airports, and land-use areas.
 
 - `dynamic/CloudLayer.ts`
   - Prepares deterministic organic cloud variants.
@@ -1184,7 +1195,9 @@ Hit testing checks, in order:
 2. roadworks;
 3. buses;
 4. MRT/LRT stations;
-5. non-link motorway, trunk, and primary roads.
+5. rail lines away from stations;
+6. airport areas;
+7. non-link motorway, trunk, and primary roads.
 
 Hover data is stored in refs so high-frequency payload changes do not rebind pointer listeners.
 
@@ -1307,7 +1320,7 @@ Define the transport contract before writing rendering code.
 3. Inject configuration, projection, randomness, and fetched data where practical.
 4. Export the layer from `backend/layers/__init__.py`.
 5. Add endpoint, polling, simulation, and default-mode settings to `config/dashboard.json`.
-6. Add credentials to `.env.example` if required.
+6. Add credentials to `.env` if required.
 7. Add state to `CityDataEngine`:
    - selected source mode;
    - current payload;
