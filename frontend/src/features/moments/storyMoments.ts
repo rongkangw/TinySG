@@ -21,7 +21,8 @@ export interface StoryMomentFocus {
   world?: Point;
   follow?:
     | { kind: "bus"; id: string }
-    | { kind: "aircraft"; index: number };
+    | { kind: "aircraft"; index: number }
+    | { kind: "train"; lineRef: string; trainIndex: number };
   zoom?: number;
 }
 
@@ -234,6 +235,7 @@ export function buildStoryMoments({
           -1,
           0,
           {
+            follow: { kind: "train", lineRef: line.ref, trainIndex: 0 },
             pixels: [pixel],
             world: [(pixel[0] + 0.5) / resolution, (pixel[1] + 0.5) / resolution],
             zoom: 10.2,

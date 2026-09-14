@@ -94,6 +94,8 @@ export function useMapInteraction({
     y: 0,
   });
   const cameraTween = useRef<CameraTween | null>(null);
+  const userSteered = useRef(false);
+  const lastFocusRequestId = useRef(0);
   const drag = useRef<{
     pointerId: number;
     x: number;
@@ -123,6 +125,11 @@ export function useMapInteraction({
   };
 
   useEffect(() => {
+    const focusRequestId = focusTarget?.requestId ?? 0;
+    if (focusRequestId !== lastFocusRequestId.current) {
+      lastFocusRequestId.current = focusRequestId;
+      userSteered.current = false;
+    }
     if (!focusTarget) return;
     let worldX: number;
     let worldY: number;
@@ -592,6 +599,7 @@ export function useMapInteraction({
     const onWheel = (event: WheelEvent) => {
       event.preventDefault();
       cameraTween.current = null;
+      userSteered.current = true;
       const bounds = element.getBoundingClientRect();
       const mouseX = event.clientX - bounds.left;
       const mouseY = event.clientY - bounds.top;
@@ -611,6 +619,7 @@ export function useMapInteraction({
     const onPointerDown = (event: PointerEvent) => {
       if (event.button !== 0) return;
       cameraTween.current = null;
+      userSteered.current = true;
       element.setPointerCapture(event.pointerId);
       drag.current = {
         pointerId: event.pointerId,
@@ -638,6 +647,7 @@ export function useMapInteraction({
     };
     const onDoubleClick = () => {
       cameraTween.current = null;
+      userSteered.current = true;
       camera.current = {
         zoom: config.camera.default_zoom,
         x: 0,
@@ -679,5 +689,5 @@ export function useMapInteraction({
     network.resolution,
   ]);
 
-  return { camera, cameraTween, dragging, hover };
+  return { camera, cameraTween, userSteered, dragging, hover };
 }

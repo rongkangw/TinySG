@@ -35,10 +35,12 @@ import {
 import {
   createTrainWakeState,
   nearestPathIndex,
+  trainHeadPixel,
   trainPixelPlacement,
   updateTrainWake,
   TRAIN_WAKE_MAX_CELLS,
 } from "../src/map/layers/dynamic/rail/trainVisualState.ts";
+import type { TrainLineModel } from "../src/map/layers/dynamic/rail/TrainLayer.ts";
 import {
   matchStationsToTrainPath,
   prepareTrimmedTrainRoute,
@@ -480,6 +482,33 @@ test("station activity spans every ingress, dwell, and egress boundary", () => {
   const departed = trainStateAt(phases, 40.001);
   equal(departed.stationPhase, "moving");
   equal(departed.stationActivity, 0);
+});
+
+test("train head pixel resolves each simulated train along its path", () => {
+  const path: Point[] = Array.from(
+    { length: 9 },
+    (_, index) => [index, 0] as Point,
+  );
+  const cumulative: number[] = path.map((_, index) => index);
+  const line: TrainLineModel = {
+    ref: "TEST",
+    colour: "#00AA88",
+    route: "medium_rail",
+    path,
+    cumulative,
+    stops: [],
+    phases: [
+      buildTrainPhases([0, 8], false, 1),
+      buildTrainPhases([0, 8], true, 1),
+    ],
+    wakeStates: [createTrainWakeState(), createTrainWakeState()],
+  };
+
+  deepEqual(trainHeadPixel(line, 0, 0), [0, 0]);
+  deepEqual(trainHeadPixel(line, 0, 41), [1, 0]);
+  deepEqual(trainHeadPixel(line, 0, 49), [8, 0]);
+  deepEqual(trainHeadPixel(line, 1, 41), [7, 0]);
+  equal(trainHeadPixel(line, 5, 0), null);
 });
 
 test("train pixels remain front-to-tail in both directions and transitions", () => {

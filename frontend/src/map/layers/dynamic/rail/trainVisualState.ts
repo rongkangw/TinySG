@@ -1,4 +1,7 @@
 import type { TrainState } from "./trainKinematics";
+import { trainStateAt } from "./trainKinematics.ts";
+import type { TrainLineModel } from "./TrainLayer.ts";
+import type { Point } from "../../../../types";
 
 export const TRAIN_PIXEL_LENGTH = 5;
 export const TRAIN_WAKE_MAX_CELLS = 4;
@@ -69,6 +72,18 @@ export function nearestPathIndex(
   );
   const insertionDifference = Math.abs(cumulative[low] - distance);
   return previousDifference <= insertionDifference ? previous : low;
+}
+
+export function trainHeadPixel(
+  line: TrainLineModel,
+  trainIndex: number,
+  elapsedSeconds: number,
+): Point | null {
+  const phases = line.phases[trainIndex];
+  if (!phases?.length) return null;
+  const train = trainStateAt(phases, elapsedSeconds);
+  const head = nearestPathIndex(line.cumulative, train.distance);
+  return line.path[head] ?? null;
 }
 
 /**

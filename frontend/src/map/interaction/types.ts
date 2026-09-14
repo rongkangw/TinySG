@@ -8,7 +8,8 @@ export interface MapFocusTarget {
   world?: Point;
   follow?:
     | { kind: "bus"; id: string }
-    | { kind: "aircraft"; index: number };
+    | { kind: "aircraft"; index: number }
+    | { kind: "train"; lineRef: string; trainIndex: number };
   zoom?: number;
   requestId: number;
 }

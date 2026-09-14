@@ -9,6 +9,7 @@ import {
   drawTrains,
   prepareTrainLines,
 } from "../map/layers/dynamic/rail/TrainLayer";
+import { trainHeadPixel } from "../map/layers/dynamic/rail/trainVisualState";
 import { prepareRailInfrastructure } from "../map/layers/static/RailInfrastructureLayer";
 import { prepareMainMap } from "../map/layers/static/MainMapLayer";
 import { prepareLandUseOverlay } from "../map/layers/static/LandUseOverlayLayer";
@@ -98,6 +99,7 @@ export function RoadCanvas({
   const frameRef = useRef(0);
   const trainEpochRef = useRef(performance.now());
   const cloudRainDarknessRef = useRef(0);
+  const focusStartedAtRef = useRef(0);
   const [size, setSize] = useState({ width: 1200, height: 800, dpr: 1 });
 
   const edgeMap = useMemo(
@@ -282,7 +284,8 @@ export function RoadCanvas({
     [],
   );
 
-  const { camera, cameraTween, dragging, hover } = useMapInteraction({
+  const { camera, cameraTween, userSteered, dragging, hover } =
+    useMapInteraction({
     containerRef,
     network,
     config,
@@ -327,6 +330,10 @@ export function RoadCanvas({
     roadworksLayer,
     trafficBands,
   };
+
+  useEffect(() => {
+    focusStartedAtRef.current = focusTarget ? performance.now() : 0;
+  }, [focusTarget]);
 
   useEffect(() => {
     const element = containerRef.current;
@@ -420,50 +427,66 @@ export function RoadCanvas({
       const trainElapsed = (now - trainEpochRef.current) / 1000;
       const current = liveScene.current;
       const tracking = current.focusTarget?.follow;
-      if (tracking && !cameraTween.current) {
-        let trackedWorld: Point | null = null;
-        if (tracking.kind === "bus") {
-          const vehicle = current.cityData?.buses.vehicles.find(
-            (candidate) => candidate.id === tracking.id,
+      let trackedWorld: Point | null = null;
+      if (tracking?.kind === "bus") {
+        const vehicle = current.cityData?.buses.vehicles.find(
+          (candidate) => candidate.id === tracking.id,
+        );
+        if (vehicle) {
+          trackedWorld = busPositionAt(
+            vehicle,
+            current.busPixelRoutes,
+            epochMs,
           );
-          if (vehicle) {
-            trackedWorld = busPositionAt(
-              vehicle,
-              current.busPixelRoutes,
-              epochMs,
-            );
-          }
-        } else {
-          const journey = airJourneys[tracking.index];
-          const point = journey
-            ? aircraftPositionAt(journey, seconds, tracking.index)
-            : null;
-          if (point) {
-            trackedWorld = [
-              (point[0] + 0.5) / network.resolution,
-              (point[1] + 0.5) / network.resolution,
-            ];
-          }
         }
-        if (trackedWorld) {
-          const target = cameraForWorldFocus(
-            trackedWorld[0],
-            trackedWorld[1],
-            Math.min(
-              config.camera.maximum_zoom,
-              Math.max(
-                config.camera.default_zoom,
-                current.focusTarget?.zoom ?? 8,
-              ),
+      } else if (tracking?.kind === "aircraft") {
+        const journey = airJourneys[tracking.index];
+        const point = journey
+          ? aircraftPositionAt(journey, seconds, tracking.index)
+          : null;
+        if (point) {
+          trackedWorld = [
+            (point[0] + 0.5) / network.resolution,
+            (point[1] + 0.5) / network.resolution,
+          ];
+        }
+      } else if (tracking?.kind === "train") {
+        const line = trainLines.find(
+          (candidate) => candidate.ref === tracking.lineRef,
+        );
+        const point = line
+          ? trainHeadPixel(line, tracking.trainIndex, trainElapsed)
+          : null;
+        if (point) {
+          trackedWorld = [
+            (point[0] + 0.5) / network.resolution,
+            (point[1] + 0.5) / network.resolution,
+          ];
+        }
+      }
+      if (
+        tracking &&
+        trackedWorld &&
+        !cameraTween.current &&
+        !userSteered.current
+      ) {
+        const target = cameraForWorldFocus(
+          trackedWorld[0],
+          trackedWorld[1],
+          Math.min(
+            config.camera.maximum_zoom,
+            Math.max(
+              config.camera.default_zoom,
+              current.focusTarget?.zoom ?? 8,
             ),
-            size,
-          );
-          camera.current = {
-            zoom: camera.current.zoom + (target.zoom - camera.current.zoom) * 0.12,
-            x: camera.current.x + (target.x - camera.current.x) * 0.12,
-            y: camera.current.y + (target.y - camera.current.y) * 0.12,
-          };
-        }
+          ),
+          size,
+        );
+        camera.current = {
+          zoom: camera.current.zoom + (target.zoom - camera.current.zoom) * 0.12,
+          x: camera.current.x + (target.x - camera.current.x) * 0.12,
+          y: camera.current.y + (target.y - camera.current.y) * 0.12,
+        };
       }
       const layers: LayerDrawCommand[] = [
         {
@@ -605,6 +628,38 @@ export function RoadCanvas({
         });
       }
       renderLayerStack(context, layers);
+
+      const focusStartedAt = focusStartedAtRef.current;
+      if (
+        trackedWorld &&
+        focusStartedAt > 0 &&
+        now - focusStartedAt < 3_000 &&
+        Math.floor((now - focusStartedAt) / 200) % 2 === 0
+      ) {
+        const unit = 1 / network.resolution;
+        context.save();
+        context.globalAlpha = 0.9;
+        context.strokeStyle = config.rendering.ping_colours.new;
+        context.lineWidth = 1.5 / scale;
+        context.beginPath();
+        context.arc(
+          trackedWorld[0],
+          trackedWorld[1],
+          2 * unit,
+          0,
+          Math.PI * 2,
+        );
+        context.stroke();
+        context.fillStyle = config.rendering.ping_colours.new;
+        context.fillRect(
+          trackedWorld[0] - 0.5 * unit,
+          trackedWorld[1] - 0.5 * unit,
+          unit,
+          unit,
+        );
+        context.restore();
+      }
+
       context.restore();
 
       frameRef.current = requestAnimationFrame(render);
